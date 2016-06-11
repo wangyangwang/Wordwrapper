@@ -1,32 +1,39 @@
 
+
+Pair<ArrayList<String>, Float> wrappedWords;
+
 void setup() {
-  size(900, 900);
-  ArrayList<String> a = new ArrayList<String>();
-  String mystring = "Li Europan";// lingues es membres del sam familie. ";
-  int maxw = 900 - 30;
-  int size;
-  size = 140;
-  int left = 256;
-  int top = 0;
+  pixelDensity(2);
+  size(800, 800);
 
-  float lineSpacing = 1.3f; //one and a half lines (approx)
-  Pair<float[], ArrayList<String>> textInfo = drawStringHelper(mystring, size, lineSpacing, maxw, left, top, 0.5f, 0, true);
-  float x0 = textInfo.a[0];//left
-  float y0 = textInfo.a[1];//top
-  float x1 = textInfo.a[2];//bottom
-  float y1 = textInfo.a[3];//right
+  String s = " vitae, justo. Nulean vulputa";
+  int maxW = 300;
+  int maxLine = 40;
+  wrappedWords = wordWrap(s, maxW, maxLine);
+}
 
-  strokeWeight(10);
-  stroke(255, 0, 0);
-  line(left, 0, left, height);//centerline for rendering
-
-  line(x0, 0, x1, 0);//horizontal range
-  line(0, y0, 0, y1);//vertical range
+void draw() {
+  background(160);
+  float[] anchorPoints = new float[4];
+  anchorPoints = drawStringHelper(wrappedWords, 20, 1,  width/2, height/2, 0.5, 0.5, LEFT, true ).a;
+  strokeWeight(2);
+  point(anchorPoints[0], anchorPoints[1]);
+  point(anchorPoints[2], anchorPoints[3]);
+  text(frameRate, 10,10);
 }
 
 //drawStringHelper: returns array of {left(x0),top(y0),right(x1),bottom(y1)}, lines
 //actuallyDraw: pass false to just calc bounds
-Pair<float[], ArrayList<String>> drawStringHelper(String str, int textSize, float lineSpacing, int maxWidth, int xLeft, int yTop, float pivotUX, float pivotUY, boolean actuallyDraw)
+Pair<float[], ArrayList<String>> drawStringHelper(
+  Pair<ArrayList<String>,Float> myPair,
+  float textSize, 
+  float lineSpacing, 
+  float xLeft, 
+  float yTop, 
+  float pivotUX, 
+  float pivotUY, 
+  int align, 
+  boolean actuallyDraw)
 {
   //pivotUX, pivotUY: kinda like the UV for the anchor point.
   //pivot(0,0) = top-left aligned, from the top
@@ -35,21 +42,16 @@ Pair<float[], ArrayList<String>> drawStringHelper(String str, int textSize, floa
   //pivot(0.5, 0.5) = centered vertically and horizontally
   //... etc.
 
-  int maxLines = 64;
-
-  int size = textSize;
+  float size = textSize;
   //size = 140;
   textSize(size);
 
-  float lineHeight = size * lineSpacing;
 
-  Pair<ArrayList<String>, Float> myPair;
-  myPair = wordWrap(str, maxWidth, maxLines);
-  //Note: final line might be too wide to fit, if we exceeded the limit!
+  float lineHeight = size * lineSpacing;
 
   ArrayList<String> a = myPair.a;
   float actualTextWidth = myPair.b;
-  float actualTextHeight = a.size() * lineHeight;
+  float actualTextHeight = a.size() * lineHeight + textDescent();
 
   float x = xLeft - pivotUX * actualTextWidth;
   float y = yTop - pivotUY * actualTextHeight;
@@ -63,7 +65,20 @@ Pair<float[], ArrayList<String>> drawStringHelper(String str, int textSize, floa
   {
     for (int i=0; i<a.size(); i++) 
     {
-      text(a.get(i), x, y + size + i * lineHeight);
+      switch (align) {
+      case LEFT:
+        textAlign(LEFT);
+        text(a.get(i), x, y + size + i * lineHeight);
+        break;
+      case RIGHT:
+        textAlign(RIGHT);
+        text(a.get(i), x + actualTextWidth, y + size + i * lineHeight);
+        break;
+      case CENTER:
+        textAlign(CENTER);
+        text(a.get(i), x + actualTextWidth/2, y + size + i * lineHeight);
+        break;
+      }
     }
   }
 
@@ -74,14 +89,11 @@ public class Pair<A, B> {
   public A a;
   public B b;
   public Pair(A setA, B setB) { 
-    a =setA; 
-    b=setB;
+    a = setA; 
+    b = setB;
   }
 }
 
-// Function to return an ArrayList of Strings
-// (maybe redo to just make simple array?)
-// Arguments: String to be wrapped, maximum width in pixels of line
 Pair<ArrayList<String>, Float> wordWrap(String s, int maxWidth, int maxLines) 
 {
   // Make an empty ArrayList
@@ -100,7 +112,7 @@ Pair<ArrayList<String>, Float> wordWrap(String s, int maxWidth, int maxLines)
     paranoia2++;
     if (paranoia2 > 2048)
     {
-      System.err.println("Paranoia2 exceeded, tried to draw > 2048 iterations!");
+      //System.err.println("Paranoia2 exceeded, tried to draw > 2048 iterations!");
       break;
     }
     // Current char
